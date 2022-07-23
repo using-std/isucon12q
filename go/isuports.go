@@ -356,7 +356,6 @@ func retrievePlayer(ctx context.Context, tenantDB dbOrTx, id string) (*PlayerRow
 	return &p, nil
 }
 
-// 参加者を取得する
 func retrievePlayers(ctx context.Context, tenantDB dbOrTx, id []string) ([]PlayerRow, error) {
 	var p []PlayerRow
 	sql, params, err := sqlx.In("SELECT * FROM player WHERE id IN (?)", id)
@@ -1070,16 +1069,6 @@ func competitionScoreHandler(c echo.Context) error {
 			return fmt.Errorf("row must have two columns: %#v", row)
 		}
 		playerID, scoreStr := row[0], row[1]
-		if _, err := retrievePlayer(ctx, tenantDB, playerID); err != nil {
-			// 存在しない参加者が含まれている
-			if errors.Is(err, sql.ErrNoRows) {
-				return echo.NewHTTPError(
-					http.StatusBadRequest,
-					fmt.Sprintf("player not found: %s", playerID),
-				)
-			}
-			return fmt.Errorf("error retrievePlayer: %w", err)
-		}
 		var score int64
 		if score, err = strconv.ParseInt(scoreStr, 10, 64); err != nil {
 			return echo.NewHTTPError(
@@ -1102,6 +1091,33 @@ func competitionScoreHandler(c echo.Context) error {
 			CreatedAt:     now,
 			UpdatedAt:     now,
 		})
+	}
+
+	idMap := map[string]struct{}{}
+	ids := make([]string, 0, len(playerScoreRows))
+	for _, s := range playerScoreRows {
+		if _, ok := idMap[s.PlayerID]; !ok {
+			ids = append(ids, s.PlayerID)
+			idMap[s.PlayerID] = struct{}{}
+		}
+	}
+	ps, err := retrievePlayers(ctx, tenantDB, ids)
+	if err != nil {
+		return fmt.Errorf("error retrievePlayer: %w", err)
+	}
+
+	if len(ps) != len(ids) {
+		for _, id := range ids {
+			for _, p := range ps {
+				if p.ID == id {
+					continue
+				}
+			}
+			return echo.NewHTTPError(
+				http.StatusBadRequest,
+				fmt.Sprintf("player not found: %s", id),
+			)
+		}
 	}
 
 	if _, err := tenantDB.ExecContext(
