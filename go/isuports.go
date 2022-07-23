@@ -51,6 +51,8 @@ var (
 	adminDB *sqlx.DB
 
 	sqliteDriverName = "sqlite3"
+
+	jwtKey interface{}
 )
 
 // 環境変数を取得する、なければデフォルト値を返す
@@ -232,19 +234,9 @@ func parseViewer(c echo.Context) (*Viewer, error) {
 	}
 	tokenStr := cookie.Value
 
-	keyFilename := getEnv("ISUCON_JWT_KEY_FILE", "../public.pem")
-	keysrc, err := os.ReadFile(keyFilename)
-	if err != nil {
-		return nil, fmt.Errorf("error os.ReadFile: keyFilename=%s: %w", keyFilename, err)
-	}
-	key, _, err := jwk.DecodePEM(keysrc)
-	if err != nil {
-		return nil, fmt.Errorf("error jwk.DecodePEM: %w", err)
-	}
-
 	token, err := jwt.Parse(
 		[]byte(tokenStr),
-		jwt.WithKey(jwa.RS256, key),
+		jwt.WithKey(jwa.RS256, jwtKey),
 	)
 	if err != nil {
 		return nil, echo.NewHTTPError(http.StatusUnauthorized, fmt.Errorf("error jwt.Parse: %s", err.Error()))
@@ -1599,6 +1591,17 @@ func initializeHandler(c echo.Context) error {
 	if err != nil {
 		return fmt.Errorf("error exec.Command: %s %e", string(out), err)
 	}
+
+	keyFilename := getEnv("ISUCON_JWT_KEY_FILE", "../public.pem")
+	keysrc, err := os.ReadFile(keyFilename)
+	if err != nil {
+		return nil, fmt.Errorf("error os.ReadFile: keyFilename=%s: %w", keyFilename, err)
+	}
+	jwtKey, _, err := jwk.DecodePEM(keysrc)
+	if err != nil {
+		return nil, fmt.Errorf("error jwk.DecodePEM: %w", err)
+	}
+
 	res := InitializeHandlerResult{
 		Lang: "go",
 	}
