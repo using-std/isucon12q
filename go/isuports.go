@@ -1232,6 +1232,11 @@ func playerHandler(c echo.Context) error {
 	}
 
 	// player_scoreを読んでいるときに更新が走ると不整合が起こるのでロックを取得する
+	fl, err := flockByTenantID(v.tenantID)
+	if err != nil {
+		return fmt.Errorf("error flockByTenantID: %w", err)
+	}
+	defer fl.Close()
 
 	pss := make([]PlayerScoreRow, 0, len(cs))
 	if err := tenantDB.SelectContext(ctx, &pss, "SELECT tenant_id, id, player_id, competition_id, score, row_num,created_at, updated_at FROM (SELECT *, RANK () OVER (PARTITION BY competition_id  ORDER BY row_num DESC) AS rank FROM player_score WHERE player_id = ? AND tenant_id = ?) WHERE rank = 1", v.tenantID, p.ID); err != nil {
