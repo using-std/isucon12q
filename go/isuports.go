@@ -406,7 +406,7 @@ func retrieveCompetitions(ctx context.Context, tenantDB dbOrTx, ids []string) ([
 	if err != nil {
 		return nil, fmt.Errorf("error Select competition: id=%s, %w", ids[0], err)
 	}
-	if err := tenantDB.GetContext(ctx, &c, sql, params); err != nil {
+	if err := tenantDB.GetContext(ctx, &c, sql, params...); err != nil {
 		return nil, fmt.Errorf("error Select competition: id=%s, %w", ids[0], err)
 	}
 	return c, nil
