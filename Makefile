@@ -10,6 +10,9 @@ noop:
 
 all: rotate deploy
 
+# make checkout BRANCH=feature/checkout
+# make deploy BRANCH=feature/checkout
+# など
 .PHONY: checkout
 checkout:
 	git fetch && \
