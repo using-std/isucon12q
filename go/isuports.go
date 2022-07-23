@@ -1627,6 +1627,9 @@ func initializeHandler(c echo.Context) error {
 	if err != nil {
 		return fmt.Errorf("error exec.Command: %s %e", string(out), err)
 	}
+
+	MigrateFromSqlite()
+
 	res := InitializeHandlerResult{
 		Lang: "go",
 	}
