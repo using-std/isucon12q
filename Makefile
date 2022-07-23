@@ -27,7 +27,7 @@ rotate: nginx-rotate mysql-rotate
 analyze: analyze-alp analyze-sql
 
 analyze-alp:
-	sudo cat /var/log/nginx/access.log | alp ltsv -m '/api/estate/req_doc/.\d+,/api/estate/.\d+,/api/chair/.\d+,/api/recommended_estate/.\d+,/api/chair/buy/.\d+' --sort=sum -r | tee logs/nginx/alp.log
+	sudo cat /var/log/nginx/access.log | alp ltsv -m "/api/player/player/*,/api/player/competition/.*/ranking,/api/organizer/competition/.*/score,/api/organizer/competition/.*/finish,/api/organizer/player/.*/disqualified" --sort sum -r | tee logs/nginx/alp.log
 
 analyze-sql:
 	sudo pt-query-digest /var/log/mysql/mysql-slow.log  | tee logs/mysql/digest.log
