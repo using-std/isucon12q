@@ -32,10 +32,10 @@ import (
 )
 
 const (
-	tenantDBSchemaFilePath = "../sql/tenant/10_schema.sql"
+	tenantDBSchemaFilePath  = "../sql/tenant/10_schema.sql"
 	tenantDBSchemaFilePath2 = "../sql/tenant/11_add_index.sql"
-	initializeScript       = "../sql/init.sh"
-	cookieName             = "isuports_session"
+	initializeScript        = "../sql/init.sh"
+	cookieName              = "isuports_session"
 
 	RoleAdmin     = "admin"
 	RoleOrganizer = "organizer"
@@ -69,6 +69,7 @@ func connectAdminDB() (*sqlx.DB, error) {
 	config.Passwd = getEnv("ISUCON_DB_PASSWORD", "isucon")
 	config.DBName = getEnv("ISUCON_DB_NAME", "isuports")
 	config.ParseTime = true
+	config.InterpolateParams = true
 	dsn := config.FormatDSN()
 	return sqlx.Open("mysql", dsn)
 }
