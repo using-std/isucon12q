@@ -1,5 +1,6 @@
 SHELL=/bin/bash
 
+BRANCH:=master
 
 DATE=$(shell date +%Y%m_%d_%H%M)
 
@@ -9,7 +10,15 @@ noop:
 
 all: rotate deploy
 
-deploy: deploy-nginx deploy-mysql deploy-go
+# make checkout BRANCH=feature/checkout
+# make deploy BRANCH=feature/checkout
+# など
+.PHONY: checkout
+checkout:
+	git fetch && \
+	git reset --hard origin/$(BRANCH)
+
+deploy: checkout deploy-nginx deploy-mysql deploy-go
 
 deploy-nginx:
 	sudo cp ./etc/nginx/sites-enabled/isuports.conf /etc/nginx/sites-enabled/isuports.conf
