@@ -1093,16 +1093,21 @@ func competitionScoreHandler(c echo.Context) error {
 			UpdatedAt:     now,
 		})
 	}
+
+	idMap := map[string]struct{}{}
 	ids := make([]string, 0, len(playerScoreRows))
 	for _, s := range playerScoreRows {
-		ids = append(ids, s.PlayerID)
+		if _, ok := idMap[s.PlayerID]; !ok {
+			ids = append(ids, s.PlayerID)
+			idMap[s.PlayerID] = struct{}{}
+		}
 	}
 	ps, err := retrievePlayers(ctx, tenantDB, ids)
 	if err != nil {
 		return fmt.Errorf("error retrievePlayer: %w", err)
 	}
 
-	if len(ps) != len(playerScoreRows) {
+	if len(ps) != len(ids) {
 		for _, id := range ids {
 			for _, p := range ps {
 				if p.ID == id {
