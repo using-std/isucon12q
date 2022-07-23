@@ -22,6 +22,9 @@ deploy-mysql:
 	sudo chmod 777 /var/log/mysql/mysql-slow.log
 	sudo systemctl restart mysql
 
+deploy-go:
+	sudo systemctl restart isuports.service 
+
 rotate: nginx-rotate mysql-rotate
 
 analyze: analyze-alp analyze-sql
