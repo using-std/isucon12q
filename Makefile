@@ -3,8 +3,13 @@ SHELL=/bin/bash
 
 DATE=$(shell date +%Y%m_%d_%H%M)
 
+.PHONY: noop
+noop:
+	echo "use arguments"
 
-all: deploy-nginx deploy-mysql
+all: rotate deploy
+
+deploy: deploy-nginx deploy-mysql
 
 deploy-nginx:
 	sudo cp ./etc/nginx/sites-enabled/isuports.conf /etc/nginx/sites-enabled/isuports.conf
@@ -18,6 +23,14 @@ deploy-mysql:
 	sudo systemctl restart mysql
 
 rotate: nginx-rotate mysql-rotate
+
+analyze: analyze-alp analyze-sql
+
+analyze-alp:
+	sudo cat /var/log/nginx/access.log | alp ltsv -m '/api/estate/req_doc/.\d+,/api/estate/.\d+,/api/chair/.\d+,/api/recommended_estate/.\d+,/api/chair/buy/.\d+' --sort=sum -r | tee logs/nginx/alp.txt
+
+analyze-sql:
+	sudo pt-query-digest /var/log/mysql/mysql-slow.log  | tee logs/mysql/digest.log
 
 nginx-rotate:
 	mkdir -p logs/nginx/backup
