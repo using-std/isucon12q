@@ -34,14 +34,14 @@ analyze-sql:
 
 nginx-rotate:
 	mkdir -p logs/nginx/backup
-	mv logs/nginx/access.log logs/nginx/backup/access.log.$(DATE) | :
+	mv /etc/nginx/access.log /etc/nginx/backup/access.log.$(DATE) | :
 	mv logs/nginx/alp.log logs/nginx/backup/alp.log.$(DATE) | :
-	sudo touch logs/nginx/access.log
-	sudo chmod 777 logs/nginx/access.log
+	sudo touch /var/log/nginx/access.log
+	sudo chmod 777 /var/log/nginx/access.log
 
 mysql-rotate:
 	mkdir -p logs/mysql/backup
 	mv logs/mysql/mysql-slow.log logs/mysql/backup/mysql-slow.log.$(DATE) | :
 	mv logs/nginx/digest.log logs/nginx/backup/digest.log.$(DATE) | :
-	sudo touch logs/mysql/mysql-slow.log
-	sudo chmod 777 logs/mysql/mysql-slow.log
+	sudo touch /var/log/mysql/mysql-slow.log
+	sudo chmod 777 /var/log//mysql/mysql-slow.log
