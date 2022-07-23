@@ -7,7 +7,7 @@ DATE=$(shell date +%Y%m_%d_%H%M)
 all: deploy-nginx
 
 deploy-nginx:
-	sudo cp ./etc/nginx/sites-enabled/isuport.conf /etc/nginx/sites-enabled/isuport.conf
+	sudo cp ./etc/nginx/sites-enabled/isuports.conf /etc/nginx/sites-enabled/isuports.conf
 	sudo cp ./etc/nginx/nginx.conf /etc/nginx/nginx.conf
 	sudo systemctl restart nginx
 
