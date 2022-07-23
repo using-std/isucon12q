@@ -38,6 +38,7 @@ nginx-rotate:
 	mv logs/nginx/alp.log logs/nginx/backup/alp.log.$(DATE) | :
 	sudo touch /var/log/nginx/access.log
 	sudo chmod 777 /var/log/nginx/access.log
+	sudo systemctl restart nginx
 
 mysql-rotate:
 	mkdir -p logs/mysql/backup
@@ -45,3 +46,4 @@ mysql-rotate:
 	mv logs/mysql/digest.log logs/mysql/backup/digest.log.$(DATE) | :
 	sudo touch /var/log/mysql/mysql-slow.log
 	sudo chmod 777 /var/log//mysql/mysql-slow.log
+	sudo systemctl restart mysql
