@@ -1594,11 +1594,11 @@ func initializeHandler(c echo.Context) error {
 	keyFilename := getEnv("ISUCON_JWT_KEY_FILE", "../public.pem")
 	keysrc, err := os.ReadFile(keyFilename)
 	if err != nil {
-		return nil, fmt.Errorf("error os.ReadFile: keyFilename=%s: %w", keyFilename, err)
+		return fmt.Errorf("error os.ReadFile: keyFilename=%s: %w", keyFilename, err)
 	}
-	jwtKey, _, err := jwk.DecodePEM(keysrc)
+	jwtKey, _, err = jwk.DecodePEM(keysrc)
 	if err != nil {
-		return nil, fmt.Errorf("error jwk.DecodePEM: %w", err)
+		return fmt.Errorf("error jwk.DecodePEM: %w", err)
 	}
 
 	res := InitializeHandlerResult{
