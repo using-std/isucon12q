@@ -401,7 +401,7 @@ func retrieveCompetition(ctx context.Context, tenantDB dbOrTx, id string) (*Comp
 }
 
 func retrieveCompetitions(ctx context.Context, tenantDB dbOrTx, ids []string) ([]CompetitionRow, error) {
-	if len(ids) > 0 {
+	if len(ids) == 0 {
 		return []CompetitionRow{}, nil
 	}
 	var c []CompetitionRow
