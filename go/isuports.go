@@ -366,6 +366,19 @@ func retrievePlayer(ctx context.Context, tenantDB dbOrTx, id string) (*PlayerRow
 	return &p, nil
 }
 
+// 参加者を取得する
+func retrievePlayers(ctx context.Context, tenantDB dbOrTx, id []string) ([]PlayerRow, error) {
+	var p []PlayerRow
+	sql, params, err := sqlx.In("SELECT * FROM player WHERE id IN (?)", id)
+	if err != nil {
+		return nil, fmt.Errorf("error Select player: id=%s, %w", id[0], err)
+	}
+	if err := tenantDB.SelectContext(ctx, &p, sql, params...); err != nil {
+		return nil, fmt.Errorf("error Select player: id=%s, %w", id, err)
+	}
+	return p, nil
+}
+
 // 参加者を認可する
 // 参加者向けAPIで呼ばれる
 func authorizePlayer(ctx context.Context, tenantDB dbOrTx, id string) error {
@@ -1363,24 +1376,34 @@ func competitionRankingHandler(c echo.Context) error {
 	}
 	ranks := make([]CompetitionRank, 0, len(pss))
 	scoredPlayerSet := make(map[string]struct{}, len(pss))
+
 	for _, ps := range pss {
-		// player_scoreが同一player_id内ではrow_numの降順でソートされているので
-		// 現れたのが2回目以降のplayer_idはより大きいrow_numでスコアが出ているとみなせる
 		if _, ok := scoredPlayerSet[ps.PlayerID]; ok {
 			continue
 		}
 		scoredPlayerSet[ps.PlayerID] = struct{}{}
-		p, err := retrievePlayer(ctx, tenantDB, ps.PlayerID)
-		if err != nil {
-			return fmt.Errorf("error retrievePlayer: %w", err)
-		}
+	}
+	ids := make([]string, 0, len(scoredPlayerSet))
+	for k, _ := range scoredPlayerSet {
+		ids = append(ids, k)
+	}
+	players, err := retrievePlayers(ctx, tenantDB, ids)
+	if err != nil {
+		return fmt.Errorf("error retrievePlayer: %w", err)
+	}
+	playerMap := map[string]PlayerRow{}
+	for _, player := range players {
+		playerMap[player.ID] = player
+	}
+	for _, ps := range pss {
 		ranks = append(ranks, CompetitionRank{
 			Score:             ps.Score,
-			PlayerID:          p.ID,
-			PlayerDisplayName: p.DisplayName,
+			PlayerID:          playerMap[ps.PlayerID].ID,
+			PlayerDisplayName: playerMap[ps.PlayerID].DisplayName,
 			RowNum:            ps.RowNum,
 		})
 	}
+
 	sort.Slice(ranks, func(i, j int) bool {
 		if ranks[i].Score == ranks[j].Score {
 			return ranks[i].RowNum < ranks[j].RowNum
