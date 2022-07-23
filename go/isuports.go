@@ -24,7 +24,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/labstack/gommon/log"
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/lestrrat-go/jwx/v2/jwt"
@@ -126,8 +125,8 @@ func SetCacheControlPrivate(next echo.HandlerFunc) echo.HandlerFunc {
 func Run() {
 	e := echo.New()
 	echoInt.Integrate(e)
-	e.Debug = true
-	e.Logger.SetLevel(log.DEBUG)
+	// e.Debug = true
+	// e.Logger.SetLevel(log.DEBUG)
 
 	var (
 		sqlLogger io.Closer
@@ -1595,11 +1594,11 @@ func initializeHandler(c echo.Context) error {
 	keyFilename := getEnv("ISUCON_JWT_KEY_FILE", "../public.pem")
 	keysrc, err := os.ReadFile(keyFilename)
 	if err != nil {
-		return nil, fmt.Errorf("error os.ReadFile: keyFilename=%s: %w", keyFilename, err)
+		return fmt.Errorf("error os.ReadFile: keyFilename=%s: %w", keyFilename, err)
 	}
-	jwtKey, _, err := jwk.DecodePEM(keysrc)
+	jwtKey, _, err = jwk.DecodePEM(keysrc)
 	if err != nil {
-		return nil, fmt.Errorf("error jwk.DecodePEM: %w", err)
+		return fmt.Errorf("error jwk.DecodePEM: %w", err)
 	}
 
 	res := InitializeHandlerResult{
