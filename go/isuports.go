@@ -24,7 +24,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/labstack/gommon/log"
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/lestrrat-go/jwx/v2/jwt"
@@ -51,6 +50,8 @@ var (
 	adminDB *sqlx.DB
 
 	sqliteDriverName = "sqlite3"
+
+	jwtKey interface{}
 )
 
 // 環境変数を取得する、なければデフォルト値を返す
@@ -124,8 +125,8 @@ func SetCacheControlPrivate(next echo.HandlerFunc) echo.HandlerFunc {
 func Run() {
 	e := echo.New()
 	echoInt.Integrate(e)
-	e.Debug = true
-	e.Logger.SetLevel(log.DEBUG)
+	// e.Debug = true
+	// e.Logger.SetLevel(log.DEBUG)
 
 	var (
 		sqlLogger io.Closer
@@ -232,19 +233,9 @@ func parseViewer(c echo.Context) (*Viewer, error) {
 	}
 	tokenStr := cookie.Value
 
-	keyFilename := getEnv("ISUCON_JWT_KEY_FILE", "../public.pem")
-	keysrc, err := os.ReadFile(keyFilename)
-	if err != nil {
-		return nil, fmt.Errorf("error os.ReadFile: keyFilename=%s: %w", keyFilename, err)
-	}
-	key, _, err := jwk.DecodePEM(keysrc)
-	if err != nil {
-		return nil, fmt.Errorf("error jwk.DecodePEM: %w", err)
-	}
-
 	token, err := jwt.Parse(
 		[]byte(tokenStr),
-		jwt.WithKey(jwa.RS256, key),
+		jwt.WithKey(jwa.RS256, jwtKey),
 	)
 	if err != nil {
 		return nil, echo.NewHTTPError(http.StatusUnauthorized, fmt.Errorf("error jwt.Parse: %s", err.Error()))
@@ -413,6 +404,9 @@ func retrieveCompetition(ctx context.Context, tenantDB dbOrTx, id string) (*Comp
 }
 
 func retrieveCompetitions(ctx context.Context, tenantDB dbOrTx, ids []string) ([]CompetitionRow, error) {
+	if len(ids) == 0 {
+		return []CompetitionRow{}, nil
+	}
 	var c []CompetitionRow
 	sql, params, err := sqlx.In("SELECT * FROM competition WHERE id IN (?)", ids)
 	if err != nil {
@@ -1252,31 +1246,11 @@ func playerHandler(c echo.Context) error {
 		return fmt.Errorf("error Select competition: %w", err)
 	}
 
-	// player_scoreを読んでいるときに更新が走ると不整合が起こるのでロックを取得する
-	fl, err := flockByTenantID(v.tenantID)
-	if err != nil {
-		return fmt.Errorf("error flockByTenantID: %w", err)
-	}
-	defer fl.Close()
 	pss := make([]PlayerScoreRow, 0, len(cs))
-	for _, c := range cs {
-		ps := PlayerScoreRow{}
-		if err := tenantDB.GetContext(
-			ctx,
-			&ps,
-			// 最後にCSVに登場したスコアを採用する = row_numが一番大きいもの
-			"SELECT * FROM player_score WHERE tenant_id = ? AND competition_id = ? AND player_id = ? ORDER BY row_num DESC LIMIT 1",
-			v.tenantID,
-			c.ID,
-			p.ID,
-		); err != nil {
-			// 行がない = スコアが記録されてない
-			if errors.Is(err, sql.ErrNoRows) {
-				continue
-			}
-			return fmt.Errorf("error Select player_score: tenantID=%d, competitionID=%s, playerID=%s, %w", v.tenantID, c.ID, p.ID, err)
+	if err := tenantDB.SelectContext(ctx, &pss, "SELECT tenant_id, id, player_id, competition_id, score, row_num,created_at, updated_at FROM (SELECT *, RANK () OVER (PARTITION BY competition_id  ORDER BY row_num DESC) AS rank FROM player_score WHERE player_id = ? AND tenant_id = ?) WHERE rank = 1", p.ID, v.tenantID); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			return fmt.Errorf("error Select player_score: tenantID=%d, competitionID=%s, playerID=%s, %w", v.tenantID, cs[0].ID, p.ID, err)
 		}
-		pss = append(pss, ps)
 	}
 
 	psds := make([]PlayerScoreDetail, 0, len(pss))
@@ -1404,24 +1378,34 @@ func competitionRankingHandler(c echo.Context) error {
 	}
 	ranks := make([]CompetitionRank, 0, len(pss))
 	scoredPlayerSet := make(map[string]struct{}, len(pss))
+
 	for _, ps := range pss {
-		// player_scoreが同一player_id内ではrow_numの降順でソートされているので
-		// 現れたのが2回目以降のplayer_idはより大きいrow_numでスコアが出ているとみなせる
 		if _, ok := scoredPlayerSet[ps.PlayerID]; ok {
 			continue
 		}
 		scoredPlayerSet[ps.PlayerID] = struct{}{}
-		p, err := retrievePlayer(ctx, tenantDB, ps.PlayerID)
-		if err != nil {
-			return fmt.Errorf("error retrievePlayer: %w", err)
-		}
+	}
+	ids := make([]string, 0, len(scoredPlayerSet))
+	for k, _ := range scoredPlayerSet {
+		ids = append(ids, k)
+	}
+	players, err := retrievePlayers(ctx, tenantDB, ids)
+	if err != nil {
+		return fmt.Errorf("error retrievePlayer: %w", err)
+	}
+	playerMap := map[string]PlayerRow{}
+	for _, player := range players {
+		playerMap[player.ID] = player
+	}
+	for _, ps := range pss {
 		ranks = append(ranks, CompetitionRank{
 			Score:             ps.Score,
-			PlayerID:          p.ID,
-			PlayerDisplayName: p.DisplayName,
+			PlayerID:          playerMap[ps.PlayerID].ID,
+			PlayerDisplayName: playerMap[ps.PlayerID].DisplayName,
 			RowNum:            ps.RowNum,
 		})
 	}
+
 	sort.Slice(ranks, func(i, j int) bool {
 		if ranks[i].Score == ranks[j].Score {
 			return ranks[i].RowNum < ranks[j].RowNum
@@ -1640,6 +1624,17 @@ func initializeHandler(c echo.Context) error {
 	if err != nil {
 		return fmt.Errorf("error exec.Command: %s %e", string(out), err)
 	}
+
+	keyFilename := getEnv("ISUCON_JWT_KEY_FILE", "../public.pem")
+	keysrc, err := os.ReadFile(keyFilename)
+	if err != nil {
+		return fmt.Errorf("error os.ReadFile: keyFilename=%s: %w", keyFilename, err)
+	}
+	jwtKey, _, err = jwk.DecodePEM(keysrc)
+	if err != nil {
+		return fmt.Errorf("error jwk.DecodePEM: %w", err)
+	}
+
 	res := InitializeHandlerResult{
 		Lang: "go",
 	}
