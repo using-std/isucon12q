@@ -9,7 +9,7 @@ noop:
 
 all: rotate deploy
 
-deploy: deploy-nginx deploy-mysql
+deploy: deploy-nginx deploy-mysql deploy-go
 
 deploy-nginx:
 	sudo cp ./etc/nginx/sites-enabled/isuports.conf /etc/nginx/sites-enabled/isuports.conf
