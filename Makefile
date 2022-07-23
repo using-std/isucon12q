@@ -1,5 +1,6 @@
 SHELL=/bin/bash
 
+BRANCH:=master
 
 DATE=$(shell date +%Y%m_%d_%H%M)
 
@@ -8,6 +9,11 @@ noop:
 	echo "use arguments"
 
 all: rotate deploy
+
+.PHONY: checkout
+checkout:
+	git fetch && \
+	git reset --hard origin/$(BRANCH)
 
 deploy: deploy-nginx deploy-mysql deploy-go
 
