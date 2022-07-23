@@ -1237,7 +1237,7 @@ func playerHandler(c echo.Context) error {
 
 	pss := make([]PlayerScoreRow, 0, len(cs))
 	if err := tenantDB.SelectContext(ctx, &pss, "SELECT * FROM (SELECT *, RANK () OVER (PARTITION BY competition_id  ORDER BY row_num DESC) AS rank FROM player_score WHERE tenant_id = ? AND player_id = ?) WHERE rank = 1", v.tenantID, p.ID); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if !errors.Is(err, sql.ErrNoRows) {
 			return fmt.Errorf("error Select player_score: tenantID=%d, competitionID=%s, playerID=%s, %w", v.tenantID, cs[0].ID, p.ID, err)
 		}
 	}
