@@ -14,4 +14,6 @@ services:
       - /home/isucon/webapp/public.pem:/home/isucon/webapp/public.pem:ro
       - /home/isucon/initial_data:/home/isucon/initial_data
       - /home/isucon/tmp:/home/isucon/tmp
+      - /var/log/nginx:/var/log/nginx
+      - /var/log/mysql:/var/log/mysql
     init: true

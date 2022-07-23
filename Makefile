@@ -9,7 +9,7 @@ noop:
 
 all: rotate deploy
 
-deploy: deploy-nginx deploy-mysql
+deploy: deploy-nginx deploy-mysql deploy-go
 
 deploy-nginx:
 	sudo cp ./etc/nginx/sites-enabled/isuports.conf /etc/nginx/sites-enabled/isuports.conf
@@ -21,6 +21,9 @@ deploy-mysql:
 	sudo touch /var/log/mysql/mysql-slow.log
 	sudo chmod 777 /var/log/mysql/mysql-slow.log
 	sudo systemctl restart mysql
+
+deploy-go:
+	sudo systemctl restart isuports.service 
 
 rotate: nginx-rotate mysql-rotate
 
