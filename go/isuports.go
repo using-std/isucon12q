@@ -27,8 +27,7 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/lestrrat-go/jwx/v2/jwt"
-
-	echoInt "github.com/kaz/pprotein/integration/echov4"
+	// echoInt "github.com/kaz/pprotein/integration/echov4"
 )
 
 const (
@@ -124,7 +123,7 @@ func SetCacheControlPrivate(next echo.HandlerFunc) echo.HandlerFunc {
 // Run は cmd/isuports/main.go から呼ばれるエントリーポイントです
 func Run() {
 	e := echo.New()
-	echoInt.Integrate(e)
+	// echoInt.Integrate(e)
 	// e.Debug = true
 	// e.Logger.SetLevel(log.DEBUG)
 
