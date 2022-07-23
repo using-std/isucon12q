@@ -75,12 +75,6 @@ func connectAdminDB() (*sqlx.DB, error) {
 	return sqlx.Open("mysql", dsn)
 }
 
-// テナントDBのパスを返す
-// func tenantDBPath(id int64) string {
-// 	tenantDBDir := getEnv("ISUCON_TENANT_DB_DIR", "../tenant_db")
-// 	return filepath.Join(tenantDBDir, fmt.Sprintf("%d.db", id))
-// }
-
 // テナントDBに接続する
 func connectToTenantDB(id int64) (*sqlx.DB, error) {
 	// p := tenantDBPath(id)
