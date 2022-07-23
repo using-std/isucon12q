@@ -27,21 +27,21 @@ rotate: nginx-rotate mysql-rotate
 analyze: analyze-alp analyze-sql
 
 analyze-alp:
-	sudo cat /var/log/nginx/access.log | alp ltsv -m '/api/estate/req_doc/.\d+,/api/estate/.\d+,/api/chair/.\d+,/api/recommended_estate/.\d+,/api/chair/buy/.\d+' --sort=sum -r | tee logs/nginx/alp.txt
+	sudo cat /var/log/nginx/access.log | alp ltsv -m '/api/estate/req_doc/.\d+,/api/estate/.\d+,/api/chair/.\d+,/api/recommended_estate/.\d+,/api/chair/buy/.\d+' --sort=sum -r | tee logs/nginx/alp.log
 
 analyze-sql:
 	sudo pt-query-digest /var/log/mysql/mysql-slow.log  | tee logs/mysql/digest.log
 
 nginx-rotate:
 	mkdir -p logs/nginx/backup
-	mv /etc/nginx/access.log /etc/nginx/backup/access.log.$(DATE) | :
+	sudo mv /var/log/nginx/access.log logs/nginx/backup/access.log.$(DATE) | :
 	mv logs/nginx/alp.log logs/nginx/backup/alp.log.$(DATE) | :
 	sudo touch /var/log/nginx/access.log
 	sudo chmod 777 /var/log/nginx/access.log
 
 mysql-rotate:
 	mkdir -p logs/mysql/backup
-	mv logs/mysql/mysql-slow.log logs/mysql/backup/mysql-slow.log.$(DATE) | :
-	mv logs/nginx/digest.log logs/nginx/backup/digest.log.$(DATE) | :
+	sudo mv /var/log/mysql/mysql-slow.log logs/mysql/backup/mysql-slow.log.$(DATE) | :
+	mv logs/mysql/digest.log logs/mysql/backup/digest.log.$(DATE) | :
 	sudo touch /var/log/mysql/mysql-slow.log
 	sudo chmod 777 /var/log//mysql/mysql-slow.log
