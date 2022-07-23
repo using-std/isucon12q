@@ -4,7 +4,7 @@ SHELL=/bin/bash
 DATE=$(shell date +%Y%m_%d_%H%M)
 
 
-all: deploy-nginx
+all: deploy-nginx deploy-mysql
 
 deploy-nginx:
 	sudo cp ./etc/nginx/sites-enabled/isuports.conf /etc/nginx/sites-enabled/isuports.conf
