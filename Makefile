@@ -15,7 +15,7 @@ checkout:
 	git fetch && \
 	git reset --hard origin/$(BRANCH)
 
-deploy: deploy-nginx deploy-mysql deploy-go
+deploy: checkout deploy-nginx deploy-mysql deploy-go
 
 deploy-nginx:
 	sudo cp ./etc/nginx/sites-enabled/isuports.conf /etc/nginx/sites-enabled/isuports.conf
