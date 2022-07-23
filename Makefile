@@ -25,7 +25,7 @@ deploy-mysql:
 deploy-go:
 	sudo systemctl restart isuports.service 
 
-rotate: nginx-rotate mysql-rotate
+rotate: nginx-rotate mysql-rotate sqlite-rotate
 
 analyze: analyze-alp analyze-sql
 
@@ -50,3 +50,8 @@ mysql-rotate:
 	sudo touch /var/log/mysql/mysql-slow.log
 	sudo chmod 777 /var/log//mysql/mysql-slow.log
 	sudo systemctl restart mysql
+
+sqlite-rotate:
+	mkdir -p logs/sqlite/backup
+	mv logs/sqlite/trace.log logs/sqlite/backup/trace.log.$(DATE) | :
+	touch logs/sqlite/trace.log
